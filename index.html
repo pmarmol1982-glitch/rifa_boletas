@@ -4,21 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Rifa</title>
-    <!-- Importamos una librería para descargar la imagen con los checks -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background: #f0f0f0; margin: 0; padding: 10px; }
         .contenedor { position: relative; display: inline-block; max-width: 100%; margin-top: 20px; }
         #imagenRifa { max-width: 100%; height: auto; display: block; border-radius: 10px; }
-        /* Estilo de los círculos verdes que se ponen encima */
+        
         .marcador {
-            position: absolute; width: 6%; height: 4.5%; 
+            position: absolute; 
+            /* Ajuste de tamaño del check */
+            width: 7.5%; height: 4.5%; 
             background: rgba(40, 167, 69, 0.85); border-radius: 50%;
-            color: white; font-size: 12px; font-weight: bold;
+            color: white; font-size: 14px; font-weight: bold;
             display: none; align-items: center; justify-content: center;
             cursor: pointer; transform: translate(-50%, -50%);
-            border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);
-            pointer-events: none; /* Para que el clic pase a la imagen de abajo */
+            border: 1.5px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            pointer-events: none;
         }
         .marcador.activo { display: flex; }
         button {
@@ -36,23 +37,24 @@
     
     <div class="contenedor" id="contenedorRifa">
         <img src="rifa.jpg" id="imagenRifa" alt="Rifa">
-        <!-- Aquí se generarán los marcadores automáticamente con JS -->
     </div>
 
     <br>
     <button onclick="descargarImagen()">📸 Descargar Imagen</button>
 
     <script>
-        // Configuración de la cuadrícula (basado en tu imagen)
-        const filas = 11;
+        const filas = 11; 
         const columnas = 10;
         
-        // Coordenadas donde empieza el primer número (0) y donde termina el último (99)
-        // Estos valores están calibrados para tu imagen específica
-        const inicioX = 11.5; // % desde la izquierda
-        const finX = 91.5;    // % desde la izquierda
-        const inicioY = 62.5; // % desde arriba
-        const finY = 91.5;    // % desde arriba
+        // --- AJUSTES DE POSICIÓN CALIBRADOS ---
+        const inicioX = 11.5; 
+        const finX = 91.5;    
+        
+        // Subimos el inicio para que pegue justo debajo del texto de valor
+        const inicioY = 61.0; 
+        // Bajamos el final para que cubra la última fila que está al borde
+        const finY = 97.0;    
+        // --------------------------------------
 
         const contenedor = document.getElementById('contenedorRifa');
         const pasoX = (finX - inicioX) / (columnas - 1);
@@ -60,7 +62,6 @@
 
         let estado = JSON.parse(localStorage.getItem('estadoRifa')) || {};
 
-        // Generar los cuadritos invisibles encima de la imagen
         for (let f = 0; f < filas; f++) {
             for (let c = 0; c < columnas; c++) {
                 const num = (f * 10) + c;
@@ -69,7 +70,6 @@
                 marcador.id = 'num-' + num;
                 marcador.innerText = '✔';
                 
-                // Posicionar el marcador
                 marcador.style.left = (inicioX + (c * pasoX)) + '%';
                 marcador.style.top = (inicioY + (f * pasoY)) + '%';
                 
@@ -78,18 +78,15 @@
             }
         }
 
-        // Detectar clics en la imagen
         contenedor.addEventListener('click', function(e) {
             const rect = contenedor.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 100;
             const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-            // Calcular qué número se tocó
             const c = Math.round((x - inicioX) / pasoX);
             const f = Math.round((y - inicioY) / pasoY);
 
             if (c >= 0 && c < columnas && f >= 0 && f < filas) {
-                // Validar que el toque no esté muy lejos del centro del número
                 const distX = Math.abs(x - (inicioX + (c * pasoX)));
                 const distY = Math.abs(y - (inicioY + (f * pasoY)));
                 
@@ -97,27 +94,21 @@
                     const num = (f * 10) + c;
                     const marcador = document.getElementById('num-' + num);
                     
-                    // Alternar estado
                     marcador.classList.toggle('activo');
                     estado[num] = marcador.classList.contains('activo');
-                    
-                    // Guardar en el teléfono
                     localStorage.setItem('estadoRifa', JSON.stringify(estado));
                 }
             }
         });
 
-        // Función para descargar la imagen con los checks
         function descargarImagen() {
             const btn = document.querySelector('button');
             btn.innerText = "Generando imagen...";
-
             html2canvas(contenedor, { scale: 2, useCORS: true }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = 'Rifa_Actualizada.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-                
                 btn.innerText = "📸 Descargar Imagen";
             });
         }
